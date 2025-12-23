@@ -3,7 +3,7 @@
 import { Auction, PagedResult } from "@/types";
 import AuctionCard from "./AuctionCard";
 import AppPagination from "../components/AppPagination";
-import { getData } from "../actions/actionAuction";
+import { getData } from "../actions/auctionAuctions";
 import { useEffect, useState } from "react";
 import Filters from "./Filters";
 import { useParamsStore } from "../hooks/useParamsStore";
@@ -20,6 +20,8 @@ export default function Listings() {
       searchTerm: state.searchTerm,
       orderBy: state.orderBy,
       filterBy: state.filterBy,
+      seller: state.seller,
+      winner: state.winner,
     }))
   );
   const setParams = useParamsStore((state) => state.setParams);
