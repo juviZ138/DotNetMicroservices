@@ -46,7 +46,7 @@ services:
       timeout: 5s
       retries: 5
   auction-svc:
-    image: qltam/auction-svc:lastest
+    image: qltam/auction-svc:latest
     build:
       context: .
       dockerfile: src/AuctionService/Dockerfile
@@ -71,7 +71,7 @@ services:
       rabbitmq:
         condition: service_healthy
   search-svc:
-    image: qltam/search-svc:lastest
+    image: qltam/search-svc:latest
     build:
       context: .
       dockerfile: src/SearchService/Dockerfile
@@ -89,31 +89,33 @@ services:
       rabbitmq:
         condition: service_healthy
   identity-svc:
-    image: qltam/identity-svc:lastest
+    image: qltam/identity-svc:latest
     build:
       context: .
       dockerfile: src/IdentityService/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:80
+      - IssuerUri=https://id.carsties.local
+      - ClientApp=https://app.carsties.local
       - ConnectionStrings__DefaultConnection=Server=postgres:5432;User Id=postgres;Password=postgrespw;Database=identity
-    ports:
-      - 5001:80
+      - VIRTUAL_HOST=id.carsties.local
+      - VIRTUAL_POST=3000
     depends_on:
       postgres:
         condition: service_healthy
   gateway-svc:
-    image: qltam/gateway-svc:lastest
+    image: qltam/gateway-svc:latest
     build:
       context: .
       dockerfile: src/GatewayService/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:80
-    ports:
-      - 6001:80
+      - ClientApp=https://app.carsties.local
+      - VIRTUAL_HOST=api.carsties.local
   bid-svc:
-    image: qltam/bid-svc:lastest
+    image: qltam/bid-svc:latest
     build:
       context: .
       dockerfile: src/BiddingService/Dockerfile
@@ -145,6 +147,31 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+  web-app:
+    image: qltam/web-app:latest
+    build:
+      context: .
+      dockerfile: frontend/web-app/Dockerfile
+    volumes:
+      - /var/lib/web/data
+    environment:
+      - AUTH_SECRET="qCc5puMD9b8snE+zSvsVMy22yfIR5ecRL/uDYUd9GoQ="
+      - API_URL=http://gateway-svc/
+      - ID_URL=https://id.carsties.local
+      - ID_URL_INTERNAL=http://identity-svc
+      - AUTH_URL=https://app.carsties.local
+      - AUTH_URL_INTERNAL=http://web-app:3000
+      - VIRTUAL_HOST=app.carsties.local
+      - VIRTUAL_POST=3000
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./devcerts:/etc/nginx/certs
 volumes:
   pgdata:
   mongodata:
