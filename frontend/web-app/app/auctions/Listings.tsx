@@ -1,6 +1,6 @@
 "use client";
 
-import { Auction, PagedResult } from "@/types";
+import { Auction } from "@/types";
 import AuctionCard from "./AuctionCard";
 import AppPagination from "../components/AppPagination";
 import { getData } from "../actions/auctionAuctions";
@@ -10,9 +10,11 @@ import { useParamsStore } from "../hooks/useParamsStore";
 import { useShallow } from "zustand/shallow";
 import qs from "query-string";
 import EmptyFilter from "../components/EmptyFilter";
+import { useAuctionStore } from "../hooks/useAuctionStore";
 
 export default function Listings() {
-  const [data, setData] = useState<PagedResult<Auction>>();
+  const [loading, setLoading] = useState(true);
+
   const params = useParamsStore(
     useShallow((state) => ({
       pageNumber: state.pageNumber,
@@ -24,11 +26,22 @@ export default function Listings() {
       winner: state.winner,
     }))
   );
+
   const setParams = useParamsStore((state) => state.setParams);
   const url = qs.stringifyUrl(
     { url: "", query: params },
     { skipEmptyString: true }
   );
+
+  const data = useAuctionStore(
+    useShallow((state) => ({
+      auctions: state.auctions,
+      totalCount: state.totalCount,
+      pageCount: state.pageCount,
+    }))
+  );
+
+  const setData = useAuctionStore((state) => state.setData);
 
   function setPageNumber(pageNumber: number) {
     setParams({ pageNumber });
@@ -37,10 +50,11 @@ export default function Listings() {
   useEffect(() => {
     getData(url).then((data) => {
       setData(data);
+      setLoading(false);
     });
-  }, [url]);
+  }, [url, setData]);
 
-  if (!data) {
+  if (loading) {
     return <h3>Loading ...</h3>;
   }
 
@@ -53,7 +67,7 @@ export default function Listings() {
         <>
           <div className="grid grid-cols-4 gap-6">
             {data &&
-              data.results.map((auction: Auction) => (
+              data.auctions.map((auction: Auction) => (
                 <AuctionCard key={auction.id} auction={auction} />
               ))}
           </div>
